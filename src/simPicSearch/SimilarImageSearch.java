@@ -1,10 +1,35 @@
 package simPicSearch;
 
 import java.awt.image.BufferedImage;  
-import java.util.ArrayList;  
-import java.util.List;  
+import java.io.*;
+import java.util.*;
+import java.util.Map.Entry;
+
+import crawlPic.crawPicTool;
   
-public class SimilarImageSearch {  
+public class SimilarImageSearch {
+	public static HashMap<String,String> indexmap = new HashMap<String,String>();
+	public static void readIndex()
+	{
+		try {
+			FileInputStream fin = new FileInputStream(new File(crawPicTool.indexFile));
+			Scanner scanner = new Scanner(fin);  
+			String record;
+			while (scanner.hasNextLine()) {  
+				record=scanner.nextLine();
+				String[] records = record.split("\t");
+				if(records!=null && records.length>=4)
+				{
+					indexmap.put(records[0], records[1]+"\t"+records[2]+"\t"+records[3]);
+				}
+				//out.println(htmlContext); 
+			}  
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
   
     /** 
      * @param args 
@@ -14,8 +39,13 @@ public class SimilarImageSearch {
         System.out.println( ImageHelper.path + "/images/");
         String filename = ImageHelper.path + "/images/";  
         String hashCode = null;  
-          
-        for (int i = 0; i < 8; i++)  
+        
+        //读取索引
+        readIndex();
+        
+        HashMap<String,Integer> simResult =  new HashMap<String,Integer>();
+        
+        for (int i = 0; i < 1000; i++)  
         {  
         	System.out.println(filename + "example" + (i + 1) + ".jpg");
             hashCode = produceFingerPrint(filename + "example" + (i + 1) + ".jpg");  
@@ -25,7 +55,7 @@ public class SimilarImageSearch {
         System.out.println(hashCodes);  
         System.out.println();  
           
-        String sourceHashCode = produceFingerPrint(filename + "source.jpg");  
+        String sourceHashCode = produceFingerPrint(filename + "source5.jpg");  
         System.out.println("Source: ");  
         System.out.println(sourceHashCode);  
         System.out.println();  
@@ -33,6 +63,7 @@ public class SimilarImageSearch {
         for (int i = 0; i < hashCodes.size(); i++)  
         {  
             int difference = hammingDistance(sourceHashCode, hashCodes.get(i));  
+            simResult.put((i+1)+"", difference);
             System.out.print("汉明距离:"+difference+"     ");  
             if(difference==0){  
                 System.out.println("source.jpg图片跟example"+(i+1)+".jpg一样");  
@@ -44,6 +75,20 @@ public class SimilarImageSearch {
                 System.out.println("source.jpg图片跟example"+(i+1)+".jpg完全不一样");  
             }  
         }  
+        
+        //按照汉明距离排序
+        ArrayList<Entry<String, Integer>> mappingList = new ArrayList<Map.Entry<String, Integer>>(simResult.entrySet());  
+        //通过比较器实现比较排序，当前排序结果是升序，若需降序只用将return中的mapping1与mapping2交换位置即可。  
+        Collections.sort(mappingList, new Comparator<Map.Entry<String,Integer>>(){  
+              public int compare(Map.Entry<String,Integer> mapping1,Map.Entry<String,Integer> mapping2){  
+                  return mapping1.getValue().compareTo(mapping2.getValue());  
+              }  
+        });  
+       for(int i=0;i<mappingList.size()&&i<100;i++)
+       {
+    	   String key = mappingList.get(i).getKey();
+    	   System.out.println(i+"\texample"+key+"\t"+mappingList.get(i).getValue()+"\t"+indexmap.get(key));
+       }
           
     }  
   
